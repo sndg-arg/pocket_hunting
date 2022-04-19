@@ -6,6 +6,7 @@ import math
 import pandas as pd
 import sys
 import os
+from Geometry import *
 
 __author__ = "Juan Manuel Prieto"
 
@@ -21,13 +22,13 @@ def H_Bonds(structure,ligand, centroid_distance , caso):
     for chain in model.get_chains():
         for residue in chain.get_residues():
             if residue.get_resname() == ligand:
-                Ligando_Centro = list(residue.center_of_mass())
+                Ligando_Centro = list(center_of_mass(residue))
 
     Residuos_Interes = []
     atoms = []
 
     for residue in chain.get_residues():
-        Residuo_Center = list(residue.center_of_mass())
+        Residuo_Center = list(center_of_mass(residue))
         if (math.dist(Ligando_Centro, Residuo_Center)) < centroid_distance:
             if residue.get_resname() in Interaciones[caso]:
                 Residuos_Interes.append([residue.get_resname(), residue.get_id()[1]])
@@ -48,13 +49,13 @@ def active_site_residues(structure, ligand, centroid_distance):
     for chain in model.get_chains():
         for residue in chain.get_residues():
             if residue.get_resname() == ligand:
-                Ligando_Centro = list(residue.center_of_mass())
+                Ligando_Centro = list(center_of_mass(residue))
 
     Residuos_Interes = []
     atoms = []
 
     for residue in chain.get_residues():
-        Residuo_Center = list(residue.center_of_mass())
+        Residuo_Center = list(center_of_mass(residue))
         if (math.dist(Ligando_Centro, Residuo_Center)) < centroid_distance:
             Residuos_Interes.append([residue.get_resname(), residue.get_id()[1]])
             for atom in residue:
