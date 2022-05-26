@@ -1,3 +1,7 @@
+import sys
+
+sys.path.insert(0, "/home/fginob1/Documents/Bitgenia/Doctorado/bioinfo_tesis/pocket_hunting")
+
 from PocketHunt.CSA_functions import residuo_catalitico
 
 csa = [{
