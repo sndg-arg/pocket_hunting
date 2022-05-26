@@ -30,10 +30,20 @@ def residuo_catalitico(UniProtID, res, res_pos, csa):
 
 if __name__ == "__main__":
     
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='Returns catalytic functions for a residue if present in CSA')
+    parser.add_argument('UniProtID', action='store', help = "UniProtID, e.g. P11362")
+    parser.add_argument('Res', action='store', help="Residue type, one letter code, e.g. D for Aspartate")
+    parser.add_argument('Res_pos', action='store', help="Position of the residue in the canonical of the UniProtID, numeration base 1, e.g. 623")
+    parser.add_argument('-csa', '--csa_db', action='store', default="catalytic_residues_hmologues.json")
+
+    args = parser.parse_args()
+    
     # levanto la base de datos de CSA
-    with open("catalytic_residues_homologues.json", "r") as handle:
+    with open(args.csa_db, "r") as handle:
         csa = json.load(handle)
 
-    cs = residuo_catalitico("P11362", "D", 623, csa)
+    cs = residuo_catalitico(args.UniProtID, args.Res, args.Res_pos, csa)
 
     print(cs)
