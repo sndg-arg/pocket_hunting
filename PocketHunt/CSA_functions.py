@@ -5,10 +5,11 @@ def residuo_catalitico(UniProtID, res, res_pos, csa):
     """
     Esta función toma como input un residuo y su localización en la secuencia canónica de UniProt
     y evalúa si el mismo figura en la base de datos del CSA como residuo catalítico
+    y devuelve una lista de funciones catalíticas
     
     Ejemplo:
     
-    with open("catalytic_residues_homologues.json", "r") as handle:
+    with open(csa_db, "r") as handle:
         csa = json.load(handle)
     CSA_residuos("P11362", "D", 623,csa)
     """
@@ -35,8 +36,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Returns catalytic functions for a residue if present in CSA')
     parser.add_argument('UniProtID', action='store', help = "UniProtID, e.g. P11362")
     parser.add_argument('Res', action='store', help="Residue type, one letter code, e.g. D for Aspartate")
-    parser.add_argument('Res_pos', action='store', help="Position of the residue in the canonical of the UniProtID, numeration base 1, e.g. 623")
-    parser.add_argument('-csa', '--csa_db', action='store', default="catalytic_residues_hmologues.json")
+    parser.add_argument('Res_pos', action='store', help="Position of the residue in the canonical of the UniProtID, numeration base 1, e.g. 623", type=int)
+    parser.add_argument('-csa', '--csa_db', action='store', default="catalytic_residues_homologues.json")
 
     args = parser.parse_args()
     
