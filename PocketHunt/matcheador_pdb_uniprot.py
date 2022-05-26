@@ -11,6 +11,7 @@ import json
 from Bio.SeqUtils import seq1
 from Bio.PDB.Polypeptide import one_to_three
 import warnings
+import argparse
 
 def get_acc_sp(record):
     """
@@ -153,20 +154,28 @@ if __name__ == "__main__":
     
     warnings.filterwarnings("ignore")
     
+    parser = argparse.ArgumentParser(description='Returns UniProtID, residue and its position (numeration 1-based) for the given residue from the crystal structure and chain')
+    parser.add_argument('PDB', action='store', help = "PDBID, e.g. 5a46")
+    parser.add_argument('Chain', action='store', help="Chain of the residue in the crystal structure e.g. A")
+    parser.add_argument('Res', action='store', help="Residue of interest, one-letter code e.g. D")
+    parser.add_argument('Res_pos', action='store', help="Position of the residue of interest, numeration 1-based e.g. 623", type=int)    
+    parser.add_argument('-fastas', '--fasta_sequences', action='store', default="uniprot_sprot_h.fasta")
+
+    args = parser.parse_args()
+    
     # voy a buscar el archivo del cristal a la carpeta con todos los pdbs
-    archivo = gzip.open('/home/fginob1/Documents/Bitgenia/Curso_bioinformatica_avanzada/pdb/zipped/pdb5a46.ent.gz','rb')
+    archivo = gzip.open("pdb" + args.PDB + ".ent.gz","rb")
     # leo el archivo y voy a escribir un archivo pdb para poder levantarlo luego con freesasa
     pdb = archivo.read()
-    with open( "5a46.pdb", "wb") as handle:
+    with open(args.PDB + ".pdb", "wb") as handle:
         handle.write(pdb)
         handle.close()
-    # path hacia la base de datos de fastas de uniprot
-    uniprot_db_path = "uniprot_sprot_h.fasta"
+
     # levanto la base de datos de secuencias de UniProt en formato fasta
     # las keys son los UniProtIDs, logrado gracias a la key_function
-    uniprot_fastas = SeqIO.index_db(f"{uniprot_db_path}.idx", uniprot_db_path, "fasta", key_function=get_acc_sp)
+    uniprot_fastas = SeqIO.index_db(f"{args.fasta_sequences}.idx", args.fasta_sequences, "fasta", key_function=get_acc_sp)
 
-    UniProtID, res, res_pos = matcheador_pdb_uniprot("5a46", "A", "D", 623,
-                                                     "5a46.pdb", uniprot_db_path, uniprot_fastas)
+    UniProtID, res, res_pos = matcheador_pdb_uniprot(args.PDB, args.Chain, args.Res, args.Res_pos,
+                                                     args.PDB + ".pdb", args.fasta_sequences, uniprot_fastas)
 
     print(UniProtID, res, res_pos)

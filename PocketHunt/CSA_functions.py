@@ -1,5 +1,6 @@
 import json
 from Bio.SeqUtils import seq1
+import argparse
 
 def residuo_catalitico(UniProtID, res, res_pos, csa):
     """
@@ -30,8 +31,6 @@ def residuo_catalitico(UniProtID, res, res_pos, csa):
     return catalytic_functions
 
 if __name__ == "__main__":
-    
-    import argparse
     
     parser = argparse.ArgumentParser(description='Returns catalytic functions for a residue if present in CSA')
     parser.add_argument('UniProtID', action='store', help = "UniProtID, e.g. P11362")
