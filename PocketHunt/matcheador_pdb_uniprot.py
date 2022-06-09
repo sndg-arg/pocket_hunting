@@ -73,75 +73,77 @@ def matcheador_pdb_uniprot(cristal, cadena, res, res_pos, pdb_file_path,
     # me quedo con el UniProtID, la secuencia del query y el hit alineadas (con los gaps) y donde arranca
     # la coincidencia del query respecto de la secuencia de cristal que dimos como input
     blast_qresult = SearchIO.read(f"{tmp}/pru_blast.xml", "blast-xml")
-    for hit in blast_qresult:
-        for hsp in hit:
-            UniProtID = hsp.hit_id.split("|")[1]
-            seq_aln_cristal = hsp.aln[0].seq
-            seq_aln_uniprot = hsp.aln[1].seq
-            start_query = hsp.query_range[0]
-        break
     
     # interruptor que sirve solamente para cortar el proceso cuando se encuentre el residuo de interés
     interruptor = False
-    # en primer lugar voy a recorrer la secuencia alineada del cristal y voy a ir contando gaps y residuos
-    # hasta llegar al número de residuo que registré previamente
-    numero_gaps_aln_cristal = 0
-    numero_residuo_aln_cristal = start_query
-    for char in seq_aln_cristal:
+    # confío en que el mejor hit siempre va a ser la proteína misma
+    # puede haber más de un hsp y puede que mi residuo de interés no caiga en el primero, por eso itero
+    for hsp in blast_qresult[0]:
         if interruptor == True:
             break
-        if char == "-":
-            numero_gaps_aln_cristal += 1
-        else:
-            numero_residuo_aln_cristal += 1
-        if numero_residuo_aln_cristal == numero_residuo_cristal:
-            # localización del residuo en la secuencia alineada, numeración base 0
-            pos_aln_1 = numero_residuo_aln_cristal + numero_gaps_aln_cristal - start_query - 1
-            # residuo en dicha localización pero sobre la secuencia de UniProt alineada
-            residuo_uniprot_aln = seq_aln_uniprot[pos_aln_1]
-            # chequeo que no sea un gap, sino no tiene sentido seguir
-            if residuo_uniprot_aln != "-":
-                # voy a contar cuantos residuos hay sobre la secuencia alineada de UniProt en el
-                # alineamiento desde el comienzo hasta el residuo de interés (excluyo gaps)
-                numero_residuo_aln_uniprot = 0
-                for residuo_uniprot in seq_aln_uniprot[0:pos_aln_1 + 1]:
-                    if residuo_uniprot != "-":
-                        numero_residuo_aln_uniprot += 1
-                # me quedo mi secuencia de interés lista para meterla en un nuevo alineamiento
-                uniprot_seq_full = uniprot_fastas[UniProtID].seq
-                # alineamos la secuencia (parcial) que fue match contra el cristal, contra la
-                # secuencia completa que viene de UniProt
-                seq_1 = seq_aln_uniprot
-                seq_2 = uniprot_seq_full
-                aligner = Align.PairwiseAligner()
-                aligner.open_gap_score = -10 # muy penalizada la apertura para que me queden bloques grandes
-                aligner.extend_gap_score = -0.5
-                aligner.query_left_open_gap_score = 0
-                aligner.query_left_extend_gap_score = 0
-                aligner.query_right_open_gap_score = 0
-                aligner.query_right_extend_gap_score = 0
-                aligner.substitution_matrix = substitution_matrices.load("BLOSUM62")
-                alignments = aligner.align(seq_1, seq_2)
-                alignment = alignments[0] #me quedo el primer alineamiento
-                # recojo las secuencias de los alineamientos con los gaps metidos en el medio
-                seq_uniprot_aln = str(alignment).split("\n")[0]
-                seq_full_uniprot_aln = str(alignment).split("\n")[2]
-                
-                # cuento gaps y residuos sobre la secuencia parcial de UniProt hasta llegar
-                # al residuo de interés
-                numero_residuos_aln_fasta2 = 0
-                numero_gaps_aln_fasta2 = 0
-                for aa in seq_uniprot_aln:
-                    if aa == "-":
-                        numero_gaps_aln_fasta2 += 1
-                    else:
-                        numero_residuos_aln_fasta2 += 1
-                    if numero_residuos_aln_fasta2 == numero_residuo_aln_uniprot:
-                        # posición en base 0 del residuo en el alineamiento
-                        pos_aln_2 = numero_residuos_aln_fasta2 + numero_gaps_aln_fasta2 - 1
-                        # residuo sobre la secuencia completa de UniProt
-                        residuo_seq_db_uniprot = seq_full_uniprot_aln[pos_aln_2]
-                        interruptor = True
+        UniProtID = hsp.hit_id.split("|")[1]
+        seq_aln_cristal = hsp.aln[0].seq
+        seq_aln_uniprot = hsp.aln[1].seq
+        start_query = hsp.query_range[0]
+        # en primer lugar voy a recorrer la secuencia alineada del cristal y voy a ir contando gaps y residuos
+        # hasta llegar al número de residuo que registré previamente
+        numero_gaps_aln_cristal = 0
+        numero_residuo_aln_cristal = start_query
+        for char in seq_aln_cristal:
+            if char == "-":
+                numero_gaps_aln_cristal += 1
+            else:
+                numero_residuo_aln_cristal += 1
+            if numero_residuo_aln_cristal == numero_residuo_cristal:
+                # localización del residuo en la secuencia alineada, numeración base 0
+                pos_aln_1 = numero_residuo_aln_cristal + numero_gaps_aln_cristal - start_query - 1
+                # residuo en dicha localización pero sobre la secuencia de UniProt alineada
+                residuo_uniprot_aln = seq_aln_uniprot[pos_aln_1]
+                # chequeo que no sea un gap, sino no tiene sentido seguir
+                if residuo_uniprot_aln != "-":
+                    # voy a contar cuantos residuos hay sobre la secuencia alineada de UniProt en el
+                    # alineamiento desde el comienzo hasta el residuo de interés (excluyo gaps)
+                    numero_residuo_aln_uniprot = 0
+                    for residuo_uniprot in seq_aln_uniprot[0:pos_aln_1 + 1]:
+                        if residuo_uniprot != "-":
+                            numero_residuo_aln_uniprot += 1
+                    # me quedo mi secuencia de interés lista para meterla en un nuevo alineamiento
+                    uniprot_seq_full = uniprot_fastas[UniProtID].seq
+                    # alineamos la secuencia (parcial) que fue match contra el cristal, contra la
+                    # secuencia completa que viene de UniProt
+                    seq_1 = seq_aln_uniprot
+                    seq_2 = uniprot_seq_full
+                    aligner = Align.PairwiseAligner()
+                    aligner.open_gap_score = -10 # muy penalizada la apertura para que me queden bloques grandes
+                    aligner.extend_gap_score = -0.5
+                    aligner.query_left_open_gap_score = 0
+                    aligner.query_left_extend_gap_score = 0
+                    aligner.query_right_open_gap_score = 0
+                    aligner.query_right_extend_gap_score = 0
+                    aligner.substitution_matrix = substitution_matrices.load("BLOSUM62")
+                    alignments = aligner.align(seq_1, seq_2)
+                    alignment = alignments[0] #me quedo el primer alineamiento
+                    # recojo las secuencias de los alineamientos con los gaps metidos en el medio
+                    seq_uniprot_aln = str(alignment).split("\n")[0]
+                    seq_full_uniprot_aln = str(alignment).split("\n")[2]
+
+                    # cuento gaps y residuos sobre la secuencia parcial de UniProt hasta llegar
+                    # al residuo de interés
+                    numero_residuos_aln_fasta2 = 0
+                    numero_gaps_aln_fasta2 = 0
+
+                    for aa in seq_uniprot_aln:
+                        if aa == "-":
+                            numero_gaps_aln_fasta2 += 1
+                        else:
+                            numero_residuos_aln_fasta2 += 1
+                        if numero_residuos_aln_fasta2 == numero_residuo_aln_uniprot:
+
+                            # posición en base 0 del residuo en el alineamiento
+                            pos_aln_2 = numero_residuos_aln_fasta2 + numero_gaps_aln_fasta2 - 1
+                            # residuo sobre la secuencia completa de UniProt
+                            residuo_seq_db_uniprot = seq_full_uniprot_aln[pos_aln_2]
+                            interruptor = True
     
     # elimino los archivos temporales generados
     os.system(f"rm {tmp}/temp_file.fasta")
