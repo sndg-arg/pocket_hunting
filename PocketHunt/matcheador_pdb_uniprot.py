@@ -12,6 +12,7 @@ from Bio.SeqUtils import seq1
 from Bio.PDB.Polypeptide import one_to_three
 import warnings
 import argparse
+from random import randint
 
 def get_acc_sp(record):
     """
@@ -29,7 +30,7 @@ def matcheador_pdb_uniprot(cristal, cadena, res, res_pos, pdb_file_path,
     y devuelve el UniProtID de la proteína, su residuo y su numeración base 1 en la secuencia de
     referencia de UniProt
     """
-
+    prefix = randint(0, 10000)
     # genero una estructura con freesasa que me permite iterar a través de los residuos con su numeración
     # propia del pdb (que puede no coincidir con la numeración de UniProt)
     structure_freesasa = freesasa.Structure(pdb_file_path)
@@ -61,18 +62,18 @@ def matcheador_pdb_uniprot(cristal, cadena, res, res_pos, pdb_file_path,
     # hago una cadena continua con todos los residuos que almacené y escribo un archivo temporal formato fasta
     # para hacer el blast contra UniProt
     seq_bruta_cristal = "".join(lista_residuos)
-    with open(f"{tmp}/temp_file.fasta", "w") as out_handle:
+    with open(f"{tmp}/{prefix}_temp_file.fasta", "w") as out_handle:
         out_handle.write(">" + cristal + "\n" + seq_bruta_cristal)
         out_handle.close()
     
     # blast contra UniProt
-    os.system(f"blastp -query {tmp}/temp_file.fasta -db {uniprot_db_path} -out {tmp}/pru_blast.xml -evalue 1e-5 -outfmt 5")
+    os.system(f"blastp -query {tmp}/{prefix}_temp_file.fasta -db {uniprot_db_path} -out {tmp}/{prefix}_pru_blast.xml -evalue 1e-5 -outfmt 5")
     
     # parseo la salida del blast contra UniProt, solo el primer hsp que debería ser el que más se parezca
     # a mi proteína de interés
     # me quedo con el UniProtID, la secuencia del query y el hit alineadas (con los gaps) y donde arranca
     # la coincidencia del query respecto de la secuencia de cristal que dimos como input
-    blast_qresult = SearchIO.read(f"{tmp}/pru_blast.xml", "blast-xml")
+    blast_qresult = SearchIO.read(f"{tmp}/{prefix}_pru_blast.xml", "blast-xml")
     
     # interruptor que sirve solamente para cortar el proceso cuando se encuentre el residuo de interés
     interruptor = False
@@ -146,8 +147,8 @@ def matcheador_pdb_uniprot(cristal, cadena, res, res_pos, pdb_file_path,
                             interruptor = True
     
     # elimino los archivos temporales generados
-    os.system(f"rm {tmp}/temp_file.fasta")
-    os.system(f"rm {tmp}/pru_blast.xml")
+    os.system(f"rm {tmp}/{prefix}_temp_file.fasta")
+    os.system(f"rm {tmp}/{prefix}_pru_blast.xml")
     
     # retorno UniProtID, tipo de residuo y posición base 1
     return UniProtID, residuo_seq_db_uniprot, pos_aln_2+1
@@ -162,8 +163,12 @@ if __name__ == "__main__":
     parser.add_argument('Res', action='store', help="Residue of interest, one-letter code e.g. D")
     parser.add_argument('Res_pos', action='store', help="Position of the residue of interest, numeration 1-based e.g. 623", type=int)    
     parser.add_argument('-fastas', '--fasta_sequences', action='store', default="uniprot_sprot_h.fasta")
+    parser.add_argument('-temp_folder', '--temp_folder', action='store', default="./tmp/")
 
     args = parser.parse_args()
+    
+    if not os.path.exists(args.temp_folder):
+        os.system(f"mkdir {args.temp_folder}")
     
     # voy a buscar el archivo del cristal a la carpeta con todos los pdbs
     archivo = gzip.open("pdb" + args.PDB + ".ent.gz","rb")
@@ -178,6 +183,6 @@ if __name__ == "__main__":
     uniprot_fastas = SeqIO.index_db(f"{args.fasta_sequences}.idx", args.fasta_sequences, "fasta", key_function=get_acc_sp)
 
     UniProtID, res, res_pos = matcheador_pdb_uniprot(args.PDB, args.Chain, args.Res, args.Res_pos,
-                                                     args.PDB + ".pdb", args.fasta_sequences, uniprot_fastas)
+                                                     args.PDB + ".pdb", args.fasta_sequences, uniprot_fastas, args.temp_folder)
 
     print(UniProtID, res, res_pos)

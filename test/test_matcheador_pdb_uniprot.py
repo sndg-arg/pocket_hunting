@@ -30,6 +30,6 @@ print("tudo bom")
 
 UniProtID, res, res_pos = matcheador_pdb_uniprot("5a46", "A", "H", 621, "5a46.pdb", "testfasta.fasta", prueba_fasta)
 
-assert res != "D" and res_pos != 623,"no deberia pegar contra nada"
+assert res != "D" and res_pos != 623, "no deberia pegar contra nada"
 
 print("tudo bom")
